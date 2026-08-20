@@ -1,5 +1,5 @@
-# Feature-Engineering-And-Model-Evaluation
-# Feature Engineering and Model Evaluation
+# Feature Engineering and Model Evaluation:
+ <img src="/images/1.gif" alt="Illustration representing Python programming basics for artificial intelligence" style="width:100%; height:auto;" />
 
 A hands-on collection of notes, notebooks, and exercises covering the full machine-learning workflow of **feature engineering** and **model evaluation** — including how to explain your model's decisions clearly to non-technical stakeholders.
 
