@@ -23,6 +23,8 @@ The course is organized into modules with lessons, exercises, and role-play acti
 | Interpretability | Feature importance, SHAP/LIME-style analysis, model explainability |
 | Communication | Explaining model behavior to domain experts and stakeholders |
 
+ <img src="/images/3.gif" alt="Illustration representing Python programming basics for artificial intelligence" style="width:100%; height:auto;" />
+
 ---
 
 ## 🚀 Getting Started
@@ -66,6 +68,8 @@ By the end of this course you should be able to:
 2. Evaluate models with appropriate metrics and validation strategies.
 3. Interpret and communicate feature importance effectively.
 4. Confidently explain ML decisions to domain experts and stakeholders.
+
+ <img src="/images/2.gif" alt="Illustration representing Python programming basics for artificial intelligence" style="width:100%; height:auto;" />
 
 ## 🤝 Contributing
 
