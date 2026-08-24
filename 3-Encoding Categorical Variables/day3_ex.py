@@ -1,61 +1,55 @@
-from sklearn.datasets import load_breast_cancer
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score
 
-# Load Dataset
-data = load_breast_cancer()
-X, y = data.data, data.target
+# Load Titanic Dataset
+url = "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv"
+df = pd.read_csv(url)
 
-# Split dataset
+# Display dataset information
+print("Dataset Info:")
+print(df.info())
+
+# Preview the first few rows
+print("\n Dataset Preview:")
+print(df.head())
+
+# Applt One-Hot Encoding
+df_one_hot = pd.get_dummies(df, columns=['Sex', 'Embarked'], drop_first=True)
+
+# Display encoded dataset
+print("\n One-Hot Encoded dataset:")
+print(df_one_hot.head())
+
+# Apply Label Encoding
+label_encoder = LabelEncoder()
+df['Pclass_encoded'] = label_encoder.fit_transform(df['Pclass'])
+
+# Display encoded dataset
+print("\n Label Encoded Dataset:")
+print(df[['Pclass', 'Pclass_encoded']].head())
+
+# APply Frequency Encoding
+df['Ticket_frequency'] = df['Ticket'].map(df['Ticket'].value_counts())
+
+# Display frequency encoded feature
+print("\n Frequence ENcoded Feature: ")
+print(df[['Ticket', 'Ticket_frequency']].head())
+
+X = df_one_hot.drop(columns=['Survived', 'Name', 'Ticket', 'Cabin', 'Age'])
+y = df['Survived']
+
+
+# SPlit dataset
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# display dataset information
-print(f"Features: {data.feature_names}")
-print(f"Classes: {data.target_names}")
+# Train logistic regression model
+model = LogisticRegression(max_iter=200)
+model.fit(X_train, y_train)
 
-# Train Gradient Boosting model
-gb_model = GradientBoostingClassifier(random_state=42)
-gb_model.fit(X_train, y_train)
-
-# Predict
-y_pred_gb = gb_model.predict(X_test)
-
-# Evaluate performance
-accuracy_gb = accuracy_score(y_test, y_pred_gb)
-print(f"Gradient Boosting Accuracy: {accuracy_gb}")
-print("\n Classification Report: \n", classification_report(y_test, y_pred_gb))
-
-# Define hyperparameter grid
-param_grid = {
-    'learning_rate': [0.01, 0.1, 0.2],
-    'n_estimators': [50, 100, 200],
-    'max_depth': [3, 5, 7]
-}
-
-# Perform Grid Search
-grid_search = GridSearchCV(
-    estimator=GradientBoostingClassifier(random_state=42),
-    param_grid=param_grid,
-    cv=5,
-    scoring='accuracy',
-    n_jobs=-1
-)
-
-grid_search.fit(X_train, y_train)
-
-# Display best parametrs and score
-print(f"Best Parameters: {grid_search.best_params_}")
-print(f"Best Cross-Validation Accuracy: {grid_search.best_score_}")
-
-# Train Random Forest
-rf_model = RandomForestClassifier(random_state=42)
-rf_model.fit(X_train, y_train)
-
-## Predict
-y_pred_rf = rf_model.predict(X_test)
-
-# Evaluate Performance
-accuracy_rf = accuracy_score(y_test, y_pred_rf)
-print(f"Random Forest Accuracy: {accuracy_rf}")
+# Predict and evaluate
+y_pred = model.predict(X_test)
+print("Accuracy with One-Hot Encoding:", accuracy_score(y_test, y_pred))
 
