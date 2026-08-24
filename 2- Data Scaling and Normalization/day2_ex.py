@@ -1,48 +1,62 @@
-from sklearn.datasets import load_breast_cancer
+from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report
-from sklearn.model_selection import GridSearchCV
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.preprocessing import MinMaxScaler, StandardScaler
+import pandas as pd
 
-# Load Dataset
-data = load_breast_cancer()
-X, y = data.data, data.target
+# Load Iris dataset
+data = load_iris()
+X = pd.DataFrame(data.data, columns=data.feature_names)
+y = data.target
 
-# Split Dataset
+# Display dataset Information
+print("Dataset Info:")
+print(X.describe())
+print("\n Target Classes:", data.target_names)
+
+# Split the dataset
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-# Display dataset informtaion
-# print("Features:", data.feature_names)
-# print("Classes: ", data.target_names)
+# Train k-NN classifier
+knn = KNeighborsClassifier(n_neighbors=5)
+knn.fit(X_train, y_train)
 
-# Train Random Forest
-rf_model = RandomForestClassifier(random_state=42)
-rf_model.fit(X_train, y_train)
+# Predict and evaluate
+y_pred = knn.predict(X_test)
+print("Accuracy Without Scaling:", accuracy_score(y_test, y_pred))
 
-# Predict
-y_pred = rf_model.predict(X_test)
+# Apply Min-Max Scaling
+scaler = MinMaxScaler()
+X_scaled = scaler.fit_transform(X)
 
-# Evaluate performance
-accuracy = accuracy_score(y_test, y_pred)
-print("Random Forest Accuracy: ", accuracy)
-print("\n Classification Report: \n", classification_report(y_test, y_pred))
+# SPlit scaled data
+X_train_scaled, X_test_scaled, y_train_scaled, y_test_scaled = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-# Define hyperparameter grid
-param_grid = {
-    'n_estimators': [50, 100, 200],
-    'max_depth': [None, 10, 20],
-    'max_features': ['sqrt', 'log2', 'None']
-}
+# Train k-NN classifier on scaled data
+knn_scaled = KNeighborsClassifier(n_neighbors=5)
+knn_scaled.fit(X_train_scaled, y_train_scaled)
 
-grid_search = GridSearchCV(
-    estimator=RandomForestClassifier(random_state=42),
-    param_grid=param_grid,
-    cv=5,
-    scoring='accuracy',
-    n_jobs=-1
-)
-grid_search.fit(X_train, y_train)
+# Predict and evaluate
+y_pred_scaled = knn_scaled.predict(X_test_scaled)
+print("Accuracy with Min-Max Scaling:", accuracy_score(y_test_scaled, y_pred_scaled))
 
-# Display best parameters and score
-print(f"Best Parameters: {grid_search.best_params_}")
-print(f"Best Cross-Validation Accuracy: {grid_search.best_score_}")
+# Apply Standardization
+scaler = StandardScaler()
+X_stand = scaler.fit_transform(X)
+
+# SPlit standardized data
+X_train_std, X_test_std, y_train_std, y_test_std = train_test_split(X_stand, y, test_size=0.2, random_state=42)
+
+# Train k-NN classifier on standardized data
+knn_stand = KNeighborsClassifier(n_neighbors=5)
+knn_stand.fit(X_train_std, y_train_std)
+
+# Predict and evaluate
+y_pred_std = knn_stand.predict(X_test_std)
+print("Accuracy with Standardization:", accuracy_score(y_test_std, y_pred_std))
+
+
+
+
+
