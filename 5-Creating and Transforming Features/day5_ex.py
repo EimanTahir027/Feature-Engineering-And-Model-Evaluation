@@ -1,69 +1,60 @@
 import pandas as pd
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
-import lightgbm as lgb
-from sklearn.metrics import accuracy_score
-from catboost import CatBoostClassifier
-from xgboost import XGBClassifier
+from sklearn.metrics import mean_squared_error
 
-# Load Titanic dataset
-url = "https://raw.githubusercontent.com/datasciencedojo/datasets/master/titanic.csv"
-df = pd.read_csv(url)
+# Load Bike Sharing Dataset
+df = pd.read_csv("bike_sharing_daily.csv")
 
-# Select features and target
-features = ['Pclass','Sex','Age','Fare', 'Embarked']
-target = 'Survived'
+# Display dataset information 
+# print("Dataset Info:")
+# print(df.info())
 
-# Handle missing values
-df.fillna({'Age': df['Age'].median()}, inplace=True)
-df.fillna({'Embarked': df['Embarked'].mode()[0]}, inplace=True)
+# Preview the first few rows
+# print("\n Dataset Preview:")
+# print(df.head())
 
-# Encode categorical variables
-label_encoders = {}
-for col in ['Sex', 'Embarked']:
-    le = LabelEncoder()
-    df[col] = le.fit_transform(df[col])
-    label_encoders[col] = le
-    
-# SPlit Data
-X = df[features]
-y = df[target]
+# Convert dteday to datetime
+df['dteday'] = pd.to_datetime(df['dteday'])
+
+# Create new features
+df['day_of_week'] = df['dteday'].dt.day_name()
+df['month'] = df['dteday'].dt.month
+df['year'] = df['dteday'].dt.year
+
+# Display the enw features
+# print("\n New Features Derived from Date Column")
+# print(df[['dteday', 'day_of_week', 'month', 'year']].head())
+
+# Select feature and target
+X = df[['temp']]
+y = df['cnt']
+
+# Apply polynomial transformation
+poly = PolynomialFeatures(degree=2, include_bias=False)
+X_poly = poly.fit_transform(X)
+
+# Display the tranformed feature
+# print("\n Original and Polynomial Features")
+# print(pd.DataFrame(X_poly, columns=['temp', 'temp^2']).head())
+
+# Split Dataset
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+X_poly_train, X_poly_test = train_test_split(X_poly, test_size=0.2, random_state=42)
 
-print(f"Traing Data Shape: {X_train.shape}")
-print(f"Test Data Shape: {X_test.shape}")
+# Train and evaluate model with original features
+model_original = LinearRegression()
+model_original.fit(X_train, y_train)
+y_pred_original = model_original.predict(X_test)
+mse_original = mean_squared_error(y_test, y_pred_original)
 
-# Train LightGBM model
-lgb_model = lgb.LGBMClassifier()
-lgb_model.fit(X_train, y_train)
+# Train and evaluate model with polynomial features
+model_poly = LinearRegression()
+model_poly.fit(X_poly_train, y_train)
+y_pred_poly = model_poly.predict(X_poly_test)
+mse_poly = mean_squared_error(y_test, y_pred_poly)
 
-# Predict and evaluate
-lgb_pred = lgb_model.predict(X_test)
-print(f"LightGBM Accuracy: {accuracy_score(y_test, lgb_pred):.4f}")
-
-# Train CatBoost model
-cat_features = ['Pclass', 'Sex', 'Embarked']
-cat_model = CatBoostClassifier(cat_features=cat_features, verbose=0)
-cat_model.fit(X_train, y_train)
-
-# Predict and evaluate
-cat_pred = cat_model.predict(X_test)
-print(f"CatBoost Accuracy: {accuracy_score(y_test, cat_pred):.4f}")
-
-# Train XGBoost model
-xgb_model = XGBClassifier(eval_metric='logloss')
-xgb_model.fit(X_train, y_train)
-
-# Predict and evaluate
-xgb_pred = xgb_model.predict(X_test)
-print(f"XGBoost Accuracy: {accuracy_score(y_test, xgb_pred):.4f}")
-
-
-# Train Catboost without encoding categorical features
-cat_model_native = CatBoostClassifier(cat_features=['Sex', 'Embarked'], verbose=0)
-cat_model_native.fit(X_train, y_train)
-
-# Predict and evaluate
-cat_preds_native = cat_model_native.predict(X_test)
-print(f"CatBoost Native Accuracy: {accuracy_score(y_test, cat_preds_native):.4f}")
-
+# COmpare results
+print(f"MSE original: {mse_original:.2f}")
+print(f"MSE Polynomial: {mse_poly:.2f}")
