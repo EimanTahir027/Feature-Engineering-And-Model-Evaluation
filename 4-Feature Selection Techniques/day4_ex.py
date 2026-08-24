@@ -1,68 +1,64 @@
-import xgboost as xgb
-from sklearn.datasets import load_breast_cancer
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import accuracy_score, classification_report
-from xgboost import XGBClassifier
-from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.datasets import load_diabetes
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
+from sklearn.feature_selection import mutual_info_regression
 
-# Load Dataset
-data = load_breast_cancer()
-X, y = data.data, data.target
+# Load the dataset
+data = load_diabetes()
+df = pd.DataFrame(data.data, columns=data.feature_names)
+df['target'] = data.target
 
-# SPlit dataset
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+# Display Dataset information
+# print(df.head())
+# print(df.info())
 
-# Display dataset info
-print(f"Features: {data.feature_names}")
-print(f"Classes: {data.target_names}")
+# Calculate correlation matrix
+correlation_matrix = df.corr()
 
-# Convert dataset to DMatrix
-dtrain = xgb.DMatrix(X_train, label=y_train)
-dtest = xgb.DMatrix(X_test, label=y_test)
+# Plot heatmap
+# plt.figure(figsize=(10,8))
+# sns.heatmap(correlation_matrix, annot=True, cmap="coolwarm")
+# plt.title("Correlation Matrix")
+# plt.show()
 
-# Train XGBoost model
-params = {
-    'objective': 'binary:logistic',
-    'eval_metric': 'logloss',
-    'max_depth': 3,
-    'eta': 0.1
-}
+# Select features with high correlation to the target
+correlated_features = correlation_matrix['target'].sort_values(ascending=False)
+# print("Features Most Correlated with Target:")
+# print(correlated_features)
 
-xgb_model = xgb.train(params, dtrain, num_boost_round=100)
+# Seperate featured and target
+X = df.drop(columns=['target'])
+y = df['target']
 
-# Predict
-y_pred = (xgb_model.predict(dtest) > 0.5).astype(int)
+# Calculate mutual information
+mutual_info = mutual_info_regression(X, y)
 
-# Evaluate performance
-accuracy = accuracy_score(y_test, y_pred)
-print(f"XGBoost Accuracy: {accuracy}")
-print("\nClassification Report: \n", classification_report(y_test, y_pred))
+# Create a Dataframe for better visualization
+mi_df = pd.DataFrame({'Feature': X.columns, "Mutual Information": mutual_info})
+mi_df = mi_df.sort_values(by="Mutual Information", ascending=False)
 
-# Define hyperparameter grid
-param_grid = {
-    'learning_rate': [0.01, 0.1, 0.2],
-    'n_estimators': [50, 100, 200],
-    'max_depth': [3, 5, 7],
-    'subsample': [0.8, 1.0],
-    'colsample_bytree': [0.8, 1.0]
-}
+# print("Mutual Information Scores:")
+# print(mi_df)
 
-# Initialize XGBoost classifier
-xgb_clf = XGBClassifier(eval_metric='logloss', random_state=42)
+from sklearn.ensemble import RandomForestRegressor
+import numpy as np
 
-# Perform Grid Search
-grid_search = GridSearchCV(estimator=xgb_clf, param_grid=param_grid, cv=5, scoring='accuracy', n_jobs=-1)
-grid_search.fit(X_train, y_train)
+# Train a Random Forest Model
+model = RandomForestRegressor(random_state=42)
+model.fit(X, y)
 
-# Display best parameters and score
-print(f"Best Parameters: {grid_search.best_params_}")
-print(f"Best Cross-Validation Accuracy: {grid_search.best_score_}")
+# Get feature importance
+feature_importance = model.feature_importances_
+importance_df = pd.DataFrame({'Feature': X.columns, 'Importance': feature_importance})
+importance_df = importance_df.sort_values(by='Importance', ascending=False)
 
-# Train gradient boosting model
-gb_model = GradientBoostingClassifier(random_state=42)
-gb_model.fit(X_train, y_train)
-y_pred_gb = gb_model.predict(X_test)
+print("Feature Importance from Random Forest:")
+print(importance_df)
 
-# Evaluate Gradient Boosting Performance
-accuracy_gb = accuracy_score(y_test, y_pred_gb)
-print(f"Gradient Boosting Accuracy: {accuracy_gb}")
+# PLot feature importance
+plt.figure(figsize=(10,6))
+plt.barh(importance_df['Feature'], importance_df['Importance'])
+plt.gca().invert_yaxis()
+plt.title("Feature Importance from Random Forest")
+plt.show()
